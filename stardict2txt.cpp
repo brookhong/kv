@@ -1,5 +1,6 @@
 /*
- * g++ -DHAVE_MMAP -g stardict2txt.cpp
+ * LINUX    : g++ -DHAVE_MMAP -g stardict2txt.cpp
+ * WINDOWS  : cl -D_WIN32 stardict2txt.cpp
  */
 #include "mapfile.hpp"
 #include <sys/stat.h>
@@ -23,17 +24,17 @@ inline void switchEndianness( void * lpMem )
     p[2] = p[1] ^ p[2];
     p[1] = p[1] ^ p[2];
 }
-int toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
+void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     char *idxdatabuffer=map_file.begin();
     char *p = idxdatabuffer;
     string fileName = txtFile;
     fileName.replace(fileName.length()-4,5,".dict");
-    ofstream fDictData(fileName.c_str());
+    ofstream fDictData(fileName.c_str(), ios_base::binary);
     fileName.replace(fileName.length()-5,4,".ifo");
     fileName.erase(fileName.length()-1);
-    ofstream fIfo(fileName.c_str());
+    ofstream fIfo(fileName.c_str(), ios_base::binary);
     fileName.replace(fileName.length()-4,4,".idx");
-    ofstream fIdx(fileName.c_str());
+    ofstream fIdx(fileName.c_str(), ios_base::binary);
     char *keyStart = ++p, *valueStart = 0;
     int keyLen = 0, offset = 0, wordCount = 0;
     for(;*p;p++) {
@@ -61,6 +62,9 @@ int toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
         } else if(*p == '\n') {
             if(keyStart && !valueStart) {
                 keyLen = p-keyStart;
+                if(*(p+1) == '\r') {
+                    keyLen -= 1;
+                }
             }
         } else if(*p == ';') {
             if(keyLen && !valueStart) {
@@ -93,10 +97,11 @@ int toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
 
     fIfo << "\ndate=";
     fIfo << sDate;
+    fIfo << "\nsametypesequence=m";
     fIfo << endl;
     fIfo.close();
 }
-int fromDict(const char *idxFile,  MapFile& map_file) {
+void fromDict(const char *idxFile,  MapFile& map_file) {
     char *idxdatabuffer=map_file.begin();
     char *p = idxdatabuffer;
     Index aIdx;
@@ -105,7 +110,7 @@ int fromDict(const char *idxFile,  MapFile& map_file) {
     ifstream fDictData(sDictFile.c_str());
     sDictFile.replace(sDictFile.length()-5,4,".txt");
     sDictFile.erase(sDictFile.length()-1);
-    ofstream fOut(sDictFile.c_str());
+    ofstream fOut(sDictFile.c_str(), ios_base::binary);
     char * pExplanation;
     unsigned int maxWordLen = 0;
     unsigned int maxExpLen = 0;

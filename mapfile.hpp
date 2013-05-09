@@ -9,6 +9,7 @@
 #endif
 #ifdef _WIN32
 #include <windows.h>
+#include <time.h>
 #endif
 
 class MapFile {
