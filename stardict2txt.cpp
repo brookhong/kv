@@ -6,13 +6,24 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string>
+#include <map>
 #include <fstream>
 using namespace std;
 
 struct Index {
-    char* m_sWord;
-    unsigned int m_nOffset;
-    unsigned int m_nSize;
+    int m_nKeyLen;
+    int m_nOffset;
+    int m_nSize;
+    Index() {
+        m_nKeyLen = 0;
+        m_nSize = 0;
+        m_nOffset = 0;
+    }
+    Index(int kLen, int eLen, int eOff) {
+        m_nKeyLen = kLen;
+        m_nSize = eLen;
+        m_nOffset = eOff;
+    }
 };
 inline void switchEndianness( void * lpMem )
 {
@@ -25,8 +36,7 @@ inline void switchEndianness( void * lpMem )
     p[1] = p[1] ^ p[2];
 }
 void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
-    char *idxdatabuffer=map_file.begin();
-    char *p = idxdatabuffer;
+    char *p = map_file.begin();
     string fileName = txtFile;
     fileName.replace(fileName.length()-4,5,".dict");
     ofstream fDictData(fileName.c_str(), ios_base::binary);
@@ -37,6 +47,7 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     ofstream fIdx(fileName.c_str(), ios_base::binary);
     char *keyStart = ++p, *valueStart = 0;
     int keyLen = 0, offset = 0, wordCount = 0;
+    map<char*, Index> idxMap;
     for(;*p;p++) {
         if(*p == '#') {
             if(keyLen && *(p-1) == '\n') {
@@ -46,12 +57,7 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
                     offset += expLen;
 
                     fDictData.write(valueStart, expLen);
-                    fIdx.write(keyStart, keyLen);
-                    fIdx.write("\0",1);
-                    switchEndianness(&expLen);
-                    switchEndianness(&iOff);
-                    fIdx.write((char*)&iOff, 4);
-                    fIdx.write((char*)&expLen, 4);
+                    idxMap[keyStart] = Index(keyLen, expLen, iOff);
 
                     wordCount++;
                     keyLen = 0;
@@ -72,6 +78,43 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
             }
         }
     }
+    char** idxVector = (char**)malloc(wordCount*sizeof(char*));
+    int* lenVector = (int*)malloc(wordCount*sizeof(int));
+    map<char*, Index>::iterator it;
+    offset = 0;
+    for(it = idxMap.begin(); it != idxMap.end(); it++) {
+        string str(it->first, it->second.m_nKeyLen);
+        int start = 0, pos, end = offset-1;
+        while(start<=end) {
+            pos = (start+end)/2;
+            string s(idxVector[pos], lenVector[pos]);
+            int cmp = strcmp(str.c_str(), s.c_str());
+            if(cmp < 0) {
+                end = pos-1;
+            } else {
+                start = pos+1;
+            }
+        }
+        for(int i = offset; i > start; i--) {
+            idxVector[i] = idxVector[i-1];
+            lenVector[i] = lenVector[i-1];
+        }
+        idxVector[start] = it->first;
+        lenVector[start] = it->second.m_nKeyLen;
+        offset++;
+    }
+    for(int i = 0; i < wordCount; i++) {
+        keyStart = idxVector[i];
+        Index aIdx = idxMap[keyStart];
+        fIdx.write(keyStart, aIdx.m_nKeyLen);
+        fIdx.write("\0",1);
+        switchEndianness(&(aIdx.m_nSize));
+        switchEndianness(&(aIdx.m_nOffset));
+        fIdx.write((char*)&aIdx.m_nOffset, 4);
+        fIdx.write((char*)&aIdx.m_nSize, 4);
+    }
+    free(idxVector);
+    free(lenVector);
     fIdx.close();
     struct stat buf;
     stat(fileName.c_str(), &buf);
@@ -102,8 +145,7 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     fIfo.close();
 }
 void fromDict(const char *idxFile,  MapFile& map_file) {
-    char *idxdatabuffer=map_file.begin();
-    char *p = idxdatabuffer;
+    char *p = map_file.begin();
     Index aIdx;
     string sDictFile = idxFile;
     sDictFile.replace(sDictFile.length()-4,5,".dict");
@@ -116,8 +158,9 @@ void fromDict(const char *idxFile,  MapFile& map_file) {
     unsigned int maxExpLen = 0;
     string maxLenString;
     size_t wordLen = 0;
+    char * sWord = 0;
     while(p) {
-        aIdx.m_sWord = p;
+        sWord = p;
         wordLen = strlen(p);
         if(wordLen>maxWordLen) {
             maxWordLen = wordLen;
@@ -138,7 +181,7 @@ void fromDict(const char *idxFile,  MapFile& map_file) {
         fDictData.seekg(aIdx.m_nOffset,ios::beg);
         fDictData.read(pExplanation,aIdx.m_nSize);
         fOut.write("#",1);
-        fOut.write(aIdx.m_sWord,wordLen);
+        fOut.write(sWord,wordLen);
         fOut.write("\n",1);
         fOut.write(";",1);
         fOut.write(pExplanation,aIdx.m_nSize);
