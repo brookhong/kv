@@ -63,7 +63,8 @@ inline void switchEndianness( void * lpMem )
 void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     char *p = map_file.begin();
     string fileName = txtFile;
-    fileName.replace(fileName.length()-4,5,".dict");
+    size_t period = fileName.find_last_of(".");
+    fileName.replace(period,fileName.length()-period,".dict");
     ofstream fDictData(fileName.c_str(), ios_base::binary);
     fileName.replace(fileName.length()-5,4,".ifo");
     fileName.erase(fileName.length()-1);
@@ -113,7 +114,7 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
         while(start<=end) {
             pos = (start+end)/2;
             string s(idxVector[pos], lenVector[pos]);
-            int cmp = strcmp(str.c_str(), s.c_str());
+            int cmp = strcasecmp(str.c_str(), s.c_str());
             if(cmp < 0) {
                 end = pos-1;
             } else {
