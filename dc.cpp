@@ -35,6 +35,7 @@
 #include <fstream>
 using namespace std;
 
+string gKeyMarker = "#";
 struct Index {
     int m_nKeyLen;
     int m_nOffset;
@@ -71,11 +72,25 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     ofstream fIfo(fileName.c_str(), ios_base::binary);
     fileName.replace(fileName.length()-4,4,".idx");
     ofstream fIdx(fileName.c_str(), ios_base::binary);
-    char *keyStart = ++p, *valueStart = 0;
+    size_t lenKeyMarker = gKeyMarker.length();
+    p += lenKeyMarker;
+    char *keyStart = p, *valueStart = 0;
     int keyLen = 0, offset = 0, wordCount = 0;
     map<char*, Index> idxMap;
     for(;*p;p++) {
-        if(*p == '#') {
+        if(*p == '\n') {
+            if(keyStart && !valueStart) {
+                keyLen = p-keyStart;
+                if(*(p+1) == '\r') {
+                    keyLen -= 1;
+                }
+            }
+        } else if(*p == ';') {
+            if(keyLen && !valueStart) {
+                valueStart = p+1;
+            }
+        //} else if(*p == gKeyMarker) {
+        } else if(strncmp(p, gKeyMarker.c_str(), lenKeyMarker) == 0) {
             if(keyLen && *(p-1) == '\n') {
                 if(valueStart) {
                     int expLen = p-valueStart-1;
@@ -89,18 +104,8 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
                     keyLen = 0;
                     valueStart = 0;
                 }
-                keyStart = p+1;
-            }
-        } else if(*p == '\n') {
-            if(keyStart && !valueStart) {
-                keyLen = p-keyStart;
-                if(*(p+1) == '\r') {
-                    keyLen -= 1;
-                }
-            }
-        } else if(*p == ';') {
-            if(keyLen && !valueStart) {
-                valueStart = p+1;
+                keyStart = p+lenKeyMarker;
+                p += lenKeyMarker-1;
             }
         }
     }
@@ -206,7 +211,7 @@ void fromDict(const char *idxFile,  MapFile& map_file) {
         pExplanation = (char*)malloc(aIdx.m_nSize);
         fDictData.seekg(aIdx.m_nOffset,ios::beg);
         fDictData.read(pExplanation,aIdx.m_nSize);
-        fOut.write("#",1);
+        fOut.write(gKeyMarker.c_str(),gKeyMarker.length());
         fOut.write(sWord,wordLen);
         fOut.write("\n",1);
         fOut.write(";",1);
@@ -214,7 +219,7 @@ void fromDict(const char *idxFile,  MapFile& map_file) {
         fOut.write("\n",1);
         free(pExplanation);
     }
-    fOut.write("#",1);
+    fOut.write(gKeyMarker.c_str(),gKeyMarker.length());
     printf("Max Word Length\t\t: %u\n"
             "Max Explanation Length\t: %u\n"
             "Longest Word\t\t: %s\n",
@@ -224,7 +229,7 @@ void fromDict(const char *idxFile,  MapFile& map_file) {
 int main(int argc,char** argv)
 {
     if(argc < 2) {
-        printf("usage:\t%s <build [-t <title>] dict.txt | extract dict.idx>\n"
+        printf("usage:\t%s <build [-t <title>] [-k <key marker>] dict.txt | extract dict.idx>\n"
                 "\t<dict_name>.idx and <dict_name>.dict must be put under the same path.\n"
                 "\t<dict_name>.dict can be extracted from <dict_name>.dict.dz by gzip.\n"
                 ,
@@ -238,6 +243,9 @@ int main(int argc,char** argv)
                 switch (argv[i][1]) {
                     case 't':
                         sBookName = argv[++i];
+                        break;
+                    case 'k':
+                        gKeyMarker = argv[++i];
                         break;
                     default:
                         break;
