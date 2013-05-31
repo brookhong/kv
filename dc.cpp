@@ -77,6 +77,8 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     char *keyStart = p, *valueStart = 0;
     int keyLen = 0, offset = 0, wordCount = 0;
     map<char*, Index> idxMap;
+    map<char*, int> synonyms;
+    map<char*, int>::iterator itci;
     for(;*p;p++) {
         if(*p == '\n') {
             if(keyStart && !valueStart) {
@@ -99,10 +101,17 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
 
                     fDictData.write(valueStart, expLen);
                     idxMap[keyStart] = Index(keyLen, expLen, iOff);
+                    for(itci = synonyms.begin(); itci != synonyms.end(); itci++) {
+                        idxMap[itci->first] = Index(itci->second, expLen, iOff);
+                        wordCount++;
+                    }
 
                     wordCount++;
                     keyLen = 0;
                     valueStart = 0;
+                    synonyms.clear();
+                } else {
+                    synonyms[keyStart] = keyLen;
                 }
                 keyStart = p+lenKeyMarker;
                 p += lenKeyMarker-1;
@@ -119,7 +128,11 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
         while(start<=end) {
             pos = (start+end)/2;
             string s(idxVector[pos], lenVector[pos]);
+#ifdef _WIN32
+            int cmp = _stricmp(str.c_str(), s.c_str());
+#else
             int cmp = strcasecmp(str.c_str(), s.c_str());
+#endif
             if(cmp < 0) {
                 end = pos-1;
             } else {
