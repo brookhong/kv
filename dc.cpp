@@ -24,10 +24,11 @@
  *
  *
  * BUILD INSTRUCTIONS
- * LINUX    : g++ -DHAVE_MMAP -g dc.cpp
- * WINDOWS  : cl -D_WIN32 dc.cpp
+ * LINUX    : g++ -DHAVE_MMAP -g dc.cpp md5.cpp
+ * WINDOWS  : cl -D_WIN32 dc.cpp md5.cpp
  */
 #include "mapfile.hpp"
+#include "md5.h"
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string>
@@ -79,6 +80,7 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     map<char*, Index> idxMap;
     map<char*, int> synonyms;
     map<char*, int>::iterator itci;
+    map<string, Index> digestMap;
     for(;*p;p++) {
         if(*p == '\n') {
             if(keyStart && !valueStart) {
@@ -99,7 +101,16 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
                     int iOff = offset;
                     offset += expLen;
 
-                    fDictData.write(valueStart, expLen);
+                    string value(valueStart, expLen);
+                    string digest = md5(value);
+                    if(digestMap.count(digest)) {
+                        Index & idx = digestMap[digest];
+                        expLen = idx.m_nSize;
+                        iOff = idx.m_nOffset;
+                    } else {
+                        fDictData.write(valueStart, expLen);
+                        digestMap[digest] = Index(0, expLen, iOff);
+                    }
                     idxMap[keyStart] = Index(keyLen, expLen, iOff);
                     for(itci = synonyms.begin(); itci != synonyms.end(); itci++) {
                         idxMap[itci->first] = Index(itci->second, expLen, iOff);
