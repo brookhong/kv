@@ -24,17 +24,13 @@
  *
  *
  * BUILD INSTRUCTIONS
- * LINUX    : g++ -DHAVE_MMAP -g dc.cpp md5.cpp
- * WINDOWS  : cl -D_WIN32 dc.cpp md5.cpp
+ * LINUX    : g++ -DHAVE_MMAP dc.cpp md5.cpp indexfile.cpp
+ * WINDOWS  : cl -D_WIN32 dc.cpp md5.cpp indexfile.cpp
  */
 #include "mapfile.hpp"
+#include "indexfile.h"
 #include "md5.h"
-#include <sys/stat.h>
-#include <stdio.h>
-#include <string>
 #include <map>
-#include <fstream>
-using namespace std;
 
 string gKeyMarker = "#";
 struct Index {
@@ -52,17 +48,7 @@ struct Index {
         m_nOffset = eOff;
     }
 };
-inline void switchEndianness( void * lpMem )
-{
-    unsigned char * p = (unsigned char*)lpMem;
-    p[0] = p[0] ^ p[3];
-    p[3] = p[0] ^ p[3];
-    p[0] = p[0] ^ p[3];
-    p[1] = p[1] ^ p[2];
-    p[2] = p[1] ^ p[2];
-    p[1] = p[1] ^ p[2];
-}
-void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
+void buildDict(const char *txtFile, MapFile& map_file, string& bookName) {
     char *p = map_file.begin();
     string fileName = txtFile;
     size_t period = fileName.find_last_of(".");
@@ -99,7 +85,6 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
                 if(valueStart) {
                     int expLen = p-valueStart-1;
                     int iOff = offset;
-                    offset += expLen;
 
                     string value(valueStart, expLen);
                     string digest = md5(value);
@@ -109,6 +94,7 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
                         iOff = idx.m_nOffset;
                     } else {
                         fDictData.write(valueStart, expLen);
+                        offset += expLen;
                         digestMap[digest] = Index(0, expLen, iOff);
                     }
                     idxMap[keyStart] = Index(keyLen, expLen, iOff);
@@ -139,11 +125,7 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
         while(start<=end) {
             pos = (start+end)/2;
             string s(idxVector[pos], lenVector[pos]);
-#ifdef _WIN32
-            int cmp = _stricmp(str.c_str(), s.c_str());
-#else
-            int cmp = strcasecmp(str.c_str(), s.c_str());
-#endif
+            int cmp = i_strcmp(str.c_str(), s.c_str());
             if(cmp < 0) {
                 end = pos-1;
             } else {
@@ -199,10 +181,10 @@ void toDict(const char *txtFile,  MapFile& map_file, string& bookName) {
     fIfo << endl;
     fIfo.close();
 }
-void fromDict(const char *idxFile,  MapFile& map_file) {
+void extractDict(const char *idxFileName, MapFile& map_file) {
     char *p = map_file.begin();
     Index aIdx;
-    string sDictFile = idxFile;
+    string sDictFile = idxFileName;
     sDictFile.replace(sDictFile.length()-4,5,".dict");
     ifstream fDictData(sDictFile.c_str());
     sDictFile.replace(sDictFile.length()-5,4,".txt");
@@ -250,14 +232,41 @@ void fromDict(const char *idxFile,  MapFile& map_file) {
             maxWordLen,maxExpLen,maxLenString.c_str());
     fOut.close();
 }
+void queryDict(const char *idxFileName, MapFile& map_file, const char *keyword) {
+    string fileName = idxFileName;
+    fileName.replace(fileName.length()-4,4,".ifo");
+    ifstream fIfo(fileName.c_str());
+    char line[256];
+    unsigned int wc = 0, idxFileSize = 0;
+    while((wc == 0 || idxFileSize == 0) && !fIfo.eof()){
+        fIfo.getline(line, 256);
+        if(strncmp(line, "wordcount=", 10) == 0) {
+            sscanf(line, "wordcount=%u\n", &wc);
+        } else if(strncmp(line, "idxfilesize=", 12) == 0) {
+            sscanf(line, "idxfilesize=%u\n", &idxFileSize);
+        }
+    }
+
+    IndexFile idxFile;
+    idxFile.load(idxFileName, wc, idxFileSize);
+    long cur;
+    if( idxFile.lookup(keyword, cur) ) {
+        string value;
+        const char * key = idxFile.get_entry(cur, value);
+        printf("%s\n", value.c_str());
+    }
+}
+void showUsage() {
+    printf( "Usage: dc -- a simple dict tool to build dict, extract dict and query\n\n"
+            "Build\n\tdc build [-t <title>] [-k <key marker>] <path to plain txt file>\n\n"
+            "Extract\n\tdc extract <path to .idx file>\n\n"
+            "Query\n\tdc query <path to .idx file> <keyword>\n"
+          );
+}
 int main(int argc,char** argv)
 {
     if(argc < 2) {
-        printf("usage:\t%s <build [-t <title>] [-k <key marker>] dict.txt | extract dict.idx>\n"
-                "\t<dict_name>.idx and <dict_name>.dict must be put under the same path.\n"
-                "\t<dict_name>.dict can be extracted from <dict_name>.dict.dz by gzip.\n"
-                ,
-                argv[0]);
+        showUsage();
         return 1;
     } else {
         int i = 2;
@@ -279,6 +288,10 @@ int main(int argc,char** argv)
                 break;
             }
         }
+        if(i == argc) {
+            showUsage();
+            return 1;
+        }
         struct stat buf;
         if(stat(argv[i],&buf) == 0) {
             MapFile map_file;
@@ -286,9 +299,16 @@ int main(int argc,char** argv)
                 return 1;
             }
             if(0 == strcmp(argv[1],"build")) {
-                toDict(argv[i], map_file, sBookName);
+                buildDict(argv[i], map_file, sBookName);
             } else if(0 == strcmp(argv[1],"extract")) {
-                fromDict(argv[i], map_file);
+                extractDict(argv[i], map_file);
+            } else if(0 == strcmp(argv[1],"query")) {
+                if(i+1 < argc) {
+                    queryDict(argv[i], map_file, argv[i+1]);
+                } else {
+                    showUsage();
+                    return 1;
+                }
             }
         }
     }
