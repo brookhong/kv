@@ -21,6 +21,12 @@ int i_strcmp(const char *s1, const char *s2)
 #endif
     return cmp;
 }
+
+int file_exist (char *filename) {
+  struct stat buffer;
+  return (stat (filename, &buffer) == 0);
+}
+
 void IndexFile::page_t::fill(char *data, int nent, long idx_)
 {
     idx=idx_;
@@ -131,6 +137,7 @@ bool IndexFile::load(const string& url, unsigned long wc, unsigned long fsize)
 
     if (!(idxfile = fopen(url.c_str(), "rb"))) {
         wordoffset.resize(0);
+        perror("fopen");
         return false;
     }
 

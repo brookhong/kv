@@ -48,7 +48,17 @@ struct Index {
         m_nOffset = eOff;
     }
 };
-void buildDict(const char *txtFile, MapFile& map_file, string& bookName) {
+
+bool createMapFile(const char *fileName, MapFile &map_file) {
+    struct stat buf;
+    return (stat(fileName, &buf) == 0 && map_file.open(fileName, buf.st_size));
+}
+
+void buildDict(const char *txtFile, string& bookName) {
+    MapFile map_file;
+    if(!createMapFile(txtFile, map_file)) {
+        return;
+    }
     char *p = map_file.begin();
     string fileName = txtFile;
     size_t period = fileName.find_last_of(".");
@@ -79,7 +89,6 @@ void buildDict(const char *txtFile, MapFile& map_file, string& bookName) {
             if(keyLen && !valueStart) {
                 valueStart = p+1;
             }
-        //} else if(*p == gKeyMarker) {
         } else if(strncmp(p, gKeyMarker.c_str(), lenKeyMarker) == 0) {
             if(keyLen && *(p-1) == '\n') {
                 if(valueStart) {
@@ -181,7 +190,11 @@ void buildDict(const char *txtFile, MapFile& map_file, string& bookName) {
     fIfo << endl;
     fIfo.close();
 }
-void extractDict(const char *idxFileName, MapFile& map_file) {
+void extractDict(const char *idxFileName) {
+    MapFile map_file;
+    if(!createMapFile(idxFileName, map_file)) {
+        return;
+    }
     char *p = map_file.begin();
     Index aIdx;
     string sDictFile = idxFileName;
@@ -232,7 +245,7 @@ void extractDict(const char *idxFileName, MapFile& map_file) {
             maxWordLen,maxExpLen,maxLenString.c_str());
     fOut.close();
 }
-void queryDict(const char *idxFileName, MapFile& map_file, const char *keyword) {
+void queryDict(const char *idxFileName, const char *keyword) {
     string fileName = idxFileName;
     fileName.replace(fileName.length()-4,4,".ifo");
     ifstream fIfo(fileName.c_str());
@@ -248,9 +261,8 @@ void queryDict(const char *idxFileName, MapFile& map_file, const char *keyword) 
     }
 
     IndexFile idxFile;
-    idxFile.load(idxFileName, wc, idxFileSize);
     long cur;
-    if( idxFile.lookup(keyword, cur) ) {
+    if( idxFile.load(idxFileName, wc, idxFileSize) && idxFile.lookup(keyword, cur) ) {
         string value;
         const char * key = idxFile.get_entry(cur, value);
         printf("%s\n", value.c_str());
@@ -292,23 +304,17 @@ int main(int argc,char** argv)
             showUsage();
             return 1;
         }
-        struct stat buf;
-        if(stat(argv[i],&buf) == 0) {
-            MapFile map_file;
-            if(!map_file.open(argv[i], buf.st_size)) {
+
+        if(0 == strcmp(argv[1],"build")) {
+            buildDict(argv[i], sBookName);
+        } else if(0 == strcmp(argv[1],"extract")) {
+            extractDict(argv[i]);
+        } else if(0 == strcmp(argv[1],"query")) {
+            if(i+1 < argc) {
+                queryDict(argv[i], argv[i+1]);
+            } else {
+                showUsage();
                 return 1;
-            }
-            if(0 == strcmp(argv[1],"build")) {
-                buildDict(argv[i], map_file, sBookName);
-            } else if(0 == strcmp(argv[1],"extract")) {
-                extractDict(argv[i], map_file);
-            } else if(0 == strcmp(argv[1],"query")) {
-                if(i+1 < argc) {
-                    queryDict(argv[i], map_file, argv[i+1]);
-                } else {
-                    showUsage();
-                    return 1;
-                }
             }
         }
     }

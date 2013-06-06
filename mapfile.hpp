@@ -25,6 +25,7 @@ class MapFile {
             }
         ~MapFile();
         bool open(const char *file_name, unsigned long file_size);
+        void close();
         inline char *begin(void) { return data; }
     private:
         char *data;
@@ -62,7 +63,7 @@ inline bool MapFile::open(const char *file_name, unsigned long file_size)
     return true;
 }
 
-inline MapFile::~MapFile()
+inline void MapFile::close()
 {
     if (!data)
         return;
@@ -76,6 +77,11 @@ inline MapFile::~MapFile()
     CloseHandle(hFile);
 #  endif
 #endif
+    data = 0;
+}
+inline MapFile::~MapFile()
+{
+    close();
 }
 
 #endif//!_MAPFILE_HPP_
