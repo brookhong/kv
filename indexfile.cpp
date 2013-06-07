@@ -22,7 +22,7 @@ int i_strcmp(const char *s1, const char *s2)
     return cmp;
 }
 
-int file_exist (char *filename) {
+int file_exist(const char *filename) {
   struct stat buffer;
   return (stat (filename, &buffer) == 0);
 }

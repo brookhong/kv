@@ -248,38 +248,42 @@ void extractDict(const char *idxFileName) {
 void queryDict(const char *idxFileName, const char *keyword) {
     string fileName = idxFileName;
     fileName.replace(fileName.length()-4,4,".ifo");
-    ifstream fIfo(fileName.c_str());
-    char line[256];
-    unsigned int wc = 0, idxFileSize = 0;
-    while((wc == 0 || idxFileSize == 0) && !fIfo.eof()){
-        fIfo.getline(line, 256);
-        if(strncmp(line, "wordcount=", 10) == 0) {
-            sscanf(line, "wordcount=%u\n", &wc);
-        } else if(strncmp(line, "idxfilesize=", 12) == 0) {
-            sscanf(line, "idxfilesize=%u\n", &idxFileSize);
+    if(!file_exist(fileName.c_str())) {
+        printf("%s not exists\n", fileName.c_str());
+    } else {
+        ifstream fIfo(fileName.c_str());
+        char line[256];
+        unsigned int wc = 0, idxFileSize = 0;
+        while((wc == 0 || idxFileSize == 0) && !fIfo.eof()){
+            fIfo.getline(line, 256);
+            if(strncmp(line, "wordcount=", 10) == 0) {
+                sscanf(line, "wordcount=%u\n", &wc);
+            } else if(strncmp(line, "idxfilesize=", 12) == 0) {
+                sscanf(line, "idxfilesize=%u\n", &idxFileSize);
+            }
+        }
+
+        IndexFile idxFile;
+        long cur;
+        if( idxFile.load(idxFileName, wc, idxFileSize) && idxFile.lookup(keyword, cur) ) {
+            string value;
+            const char * key = idxFile.get_entry(cur, value);
+            printf("%s\n", value.c_str());
         }
     }
-
-    IndexFile idxFile;
-    long cur;
-    if( idxFile.load(idxFileName, wc, idxFileSize) && idxFile.lookup(keyword, cur) ) {
-        string value;
-        const char * key = idxFile.get_entry(cur, value);
-        printf("%s\n", value.c_str());
-    }
 }
-void showUsage() {
+int showUsage() {
     printf( "Usage: dc -- a simple dict tool to build dict, extract dict and query\n\n"
             "Build\n\tdc build [-t <title>] [-k <key marker>] <path to plain txt file>\n\n"
             "Extract\n\tdc extract <path to .idx file>\n\n"
             "Query\n\tdc query <path to .idx file> <keyword>\n"
           );
+    return 1;
 }
 int main(int argc,char** argv)
 {
     if(argc < 2) {
-        showUsage();
-        return 1;
+        return showUsage();
     } else {
         int i = 2;
         string sBookName;
@@ -301,8 +305,7 @@ int main(int argc,char** argv)
             }
         }
         if(i == argc) {
-            showUsage();
-            return 1;
+            return showUsage();
         }
 
         if(0 == strcmp(argv[1],"build")) {
@@ -313,9 +316,10 @@ int main(int argc,char** argv)
             if(i+1 < argc) {
                 queryDict(argv[i], argv[i+1]);
             } else {
-                showUsage();
-                return 1;
+                return showUsage();
             }
+        } else {
+            return showUsage();
         }
     }
     return 0;

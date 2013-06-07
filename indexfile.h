@@ -12,7 +12,7 @@ const int INVALID_INDEX=-100;
 
 void switchEndianness( void * lpMem );
 int i_strcmp(const char *s1, const char *s2);
-int file_exist (char *filename);
+int file_exist(const char *filename);
 
 class IndexFile {
     public:
