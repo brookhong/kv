@@ -26,6 +26,7 @@ class IndexFile {
         void get_data(long idx);
         const char *get_key_and_data(long idx);
         bool lookup(const char *str, long &idx);
+        bool lookup2(const char *str, long &idx);
 
     private:
         static const int ENTR_PER_PAGE=32;

@@ -265,7 +265,7 @@ void queryDict(const char *idxFileName, const char *keyword) {
 
         IndexFile idxFile;
         long cur;
-        if( idxFile.load(idxFileName, wc, idxFileSize) && idxFile.lookup(keyword, cur) ) {
+        if( idxFile.load(idxFileName, wc, idxFileSize) && (idxFile.lookup(keyword, cur) || idxFile.lookup2(keyword, cur)) ) {
             string value;
             const char * key = idxFile.get_entry(cur, value);
             printf("%s\n", value.c_str());

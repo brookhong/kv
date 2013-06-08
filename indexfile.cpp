@@ -254,3 +254,98 @@ bool IndexFile::lookup(const char *str, long &idx)
     }
     return bFound;
 }
+static bool isEnglish(const char *str)
+{
+    int i = 0;
+    while(str[i]!=0 && isascii(str[i])) {
+        i++;
+    }
+    return (str[i] == 0);
+}
+static inline bool isVowel(char ch)
+{
+    return( ch=='a' || ch=='e' || ch=='i' || ch=='o' || ch=='u' );
+}
+bool IndexFile::lookup2(const char *str, long &idx)
+{
+    string word(str);
+    int len = word.length();
+    if(len < 4 && !isEnglish(str)) {
+        return false;
+    }
+    string ending3 = word.substr(len-3,3);
+    string ending2 = word.substr(len-2,2);
+
+    for(int i=0;i<len;i++) {
+        word[i] = tolower(word[i]);
+    }
+    vector<string> sWords;
+    if(word[len-1] == 's' || word[len-1] == 'd'
+            || (word[len-1] == 'y' && word[len-2] == 'l' && word[len-3] == 'l' ) ) {
+        sWords.push_back(word.replace(len-1, 1, ""));
+    }
+    if(ending3 == "ing") {
+        sWords.push_back(word.replace(len-3, 3, ""));
+    }
+    if(ending2 == "ed") {
+        sWords.push_back(word.replace(len-2, 2, ""));
+    }
+    if(len>4 && !isVowel(word[len-4])) {
+        // [d]ies->y,[d]ied->y,[p]ier->y
+        if(ending3 == "ies" || ending3 == "ied" || ending3 == "ier") {
+            sWords.push_back(word.replace(len-3, 3, "y"));
+        }
+        else if(ending3 == "ing") {
+            // [m]ing->e
+            sWords.push_back(word.replace(len-3, 3, "e"));
+        }
+    }
+    if(len>6 && isVowel(word[len-6]) && !isVowel(word[len-5]) && word[len-5] == word[len-4]) {
+        // [og]ging->
+        if(ending3 == "ing") {
+            sWords.push_back(word.replace(len-4, 4, ""));
+        }
+    }
+    if(len>5 && isVowel(word[len-5]) && !isVowel(word[len-4])) {
+        // [op]ped->,[ot]est->
+        string endinh = word.substr(len-4,1)+"ed";
+        if(ending3 == "est" || endinh == ending3) {
+            sWords.push_back(word.replace(len-3, 3, ""));
+        }
+    }
+    if(!isVowel(word[len-3])) {
+        if(ending2 == "er") {
+            if(isVowel(word[len-4])) {
+                // [ot]er->
+                sWords.push_back(word.replace(len-2, 2, ""));
+            }
+            // [t]er->r
+            sWords.push_back(word.replace(len-2, 2, "r"));
+        }
+    }
+    if( word[len-3] == 's' || word[len-3] == 'x' || word[len-3] == 'o'
+            || (word[len-3] == 'h' && (word[len-4] == 's' || word[len-4] == 'c')) ) {
+        // [s|x|sh|ch|o]es->
+        if(ending2 == "es") {
+            sWords.push_back(word.replace(len-2, 2, ""));
+        }
+    }
+    if(ending3 == "ied" || ending3 == "ily") {
+        // ied->y,ily->y
+        sWords.push_back(word.replace(len-3, 3, ""));
+    }
+    if(ending2 == "ve") {
+        // ve->s
+        sWords.push_back(word.replace(len-2, 2, "s"));
+    }
+    if(!isVowel(word[len-2]) && word[len-1] == 'y') {
+        // [bl]y->e
+        sWords.push_back(word.replace(len-2, 2, "e"));
+    }
+    for(int i=0; i<sWords.size();i++) {
+        if(lookup(sWords[i].c_str(), idx)) {
+            return true;
+        }
+    }
+    return false;
+}
