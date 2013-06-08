@@ -268,6 +268,9 @@ static inline bool isVowel(char ch)
 }
 bool IndexFile::lookup2(const char *str, long &idx)
 {
+    // http://www.eslcafe.com/grammar/simple_past_tense02.html
+    // http://www.eslcafe.com/grammar/verb_forms_and_tenses06.html
+    // test cases: windows,stopped,hotter,goes,hottest,higher,highest,studies,hogging,cheating,hoping,gluing
     string word(str);
     int len = word.length();
     if(len < 4 && !isEnglish(str)) {
@@ -282,65 +285,56 @@ bool IndexFile::lookup2(const char *str, long &idx)
     vector<string> sWords;
     if(word[len-1] == 's' || word[len-1] == 'd'
             || (word[len-1] == 'y' && word[len-2] == 'l' && word[len-3] == 'l' ) ) {
-        sWords.push_back(word.replace(len-1, 1, ""));
+        sWords.push_back(string(word).replace(len-1, 1, ""));
     }
-    if(ending3 == "ing") {
-        sWords.push_back(word.replace(len-3, 3, ""));
+    if(ending2 == "ed" || ending2 == "er") {
+        sWords.push_back(string(word).replace(len-2, 2, ""));
     }
-    if(ending2 == "ed") {
-        sWords.push_back(word.replace(len-2, 2, ""));
+    if(ending3 == "ing" || ending3 == "est") {
+        sWords.push_back(string(word).replace(len-3, 3, ""));
     }
     if(len>4 && !isVowel(word[len-4])) {
         // [d]ies->y,[d]ied->y,[p]ier->y
         if(ending3 == "ies" || ending3 == "ied" || ending3 == "ier") {
-            sWords.push_back(word.replace(len-3, 3, "y"));
+            sWords.push_back(string(word).replace(len-3, 3, "y"));
         }
         else if(ending3 == "ing") {
             // [m]ing->e
-            sWords.push_back(word.replace(len-3, 3, "e"));
+            sWords.push_back(string(word).replace(len-3, 3, "e"));
         }
     }
-    if(len>6 && isVowel(word[len-6]) && !isVowel(word[len-5]) && word[len-5] == word[len-4]) {
-        // [og]ging->
-        if(ending3 == "ing") {
-            sWords.push_back(word.replace(len-4, 4, ""));
-        }
+    if(len>6 && isVowel(word[len-6]) && !isVowel(word[len-5]) && word[len-5] == word[len-4]
+            && (ending3 == "ing" || ending3 == "est")) {
+        // [og]ging->,[ot]test->
+        sWords.push_back(string(word).replace(len-4, 4, ""));
     }
-    if(len>5 && isVowel(word[len-5]) && !isVowel(word[len-4])) {
-        // [op]ped->,[ot]est->
-        string endinh = word.substr(len-4,1)+"ed";
-        if(ending3 == "est" || endinh == ending3) {
-            sWords.push_back(word.replace(len-3, 3, ""));
-        }
+    if(len>5 && isVowel(word[len-5]) && !isVowel(word[len-4]) && word[len-4] == word[len-3]
+            && (ending2 == "er" || ending2 == "ed")) {
+        // [op]ped->,[ot]ter->
+        sWords.push_back(string(word).replace(len-3, 3, ""));
     }
-    if(!isVowel(word[len-3])) {
-        if(ending2 == "er") {
-            if(isVowel(word[len-4])) {
-                // [ot]er->
-                sWords.push_back(word.replace(len-2, 2, ""));
-            }
-            // [t]er->r
-            sWords.push_back(word.replace(len-2, 2, "r"));
-        }
+    if(!isVowel(word[len-3]) && ending2 == "er") {
+        // [t]er->r
+        sWords.push_back(string(word).replace(len-1, 1, ""));
     }
     if( word[len-3] == 's' || word[len-3] == 'x' || word[len-3] == 'o'
             || (word[len-3] == 'h' && (word[len-4] == 's' || word[len-4] == 'c')) ) {
         // [s|x|sh|ch|o]es->
         if(ending2 == "es") {
-            sWords.push_back(word.replace(len-2, 2, ""));
+            sWords.push_back(string(word).replace(len-2, 2, ""));
         }
     }
     if(ending3 == "ied" || ending3 == "ily") {
         // ied->y,ily->y
-        sWords.push_back(word.replace(len-3, 3, ""));
+        sWords.push_back(string(word).replace(len-3, 3, "y"));
     }
     if(ending2 == "ve") {
         // ve->s
-        sWords.push_back(word.replace(len-2, 2, "s"));
+        sWords.push_back(string(word).replace(len-2, 2, "s"));
     }
     if(!isVowel(word[len-2]) && word[len-1] == 'y') {
         // [bl]y->e
-        sWords.push_back(word.replace(len-2, 2, "e"));
+        sWords.push_back(string(word).replace(len-1, 1, "e"));
     }
     for(int i=0; i<sWords.size();i++) {
         if(lookup(sWords[i].c_str(), idx)) {
