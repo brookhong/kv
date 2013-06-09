@@ -1,13 +1,18 @@
-Dictionary Compiler for StarDict
+#Command line dictionary tool -- `kv`
 
-The `dc` can help to extract plain text from a dictionary of StarDict, for example,
+The `kv` can
 
-    dc extract oxford.idx
+extract plain text from a dictionary of StarDict, for example,
 
+    kv extract oxford.idx
 
-Also can help to build a dictionary of StarDict from a plain text file, like,
+build a dictionary of StarDict from a plain text file, like,
 
-    dc build oxford.txt
+    kv build oxford.txt
+
+query by keyword from a specified dictionary,
+
+    kv query oxford.idx key
 
 
 The plain text file should be formated like this:

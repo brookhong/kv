@@ -24,8 +24,8 @@
  *
  *
  * BUILD INSTRUCTIONS
- * LINUX    : g++ -DHAVE_MMAP dc.cpp md5.cpp indexfile.cpp
- * WINDOWS  : cl -D_WIN32 dc.cpp md5.cpp indexfile.cpp
+ * LINUX    : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp
+ * WINDOWS  : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp
  */
 #include "mapfile.hpp"
 #include "indexfile.h"
@@ -273,7 +273,7 @@ void queryDict(const char *idxFileName, const char *keyword) {
     }
 }
 int showUsage() {
-    printf( "Usage: dc -- a simple dict tool to build dict, extract dict and query\n\n"
+    printf( "Usage: kv -- a simple dict tool to build dict, extract dict and query\n\n"
             "Build\n\tdc build [-t <title>] [-k <key marker>] <path to plain txt file>\n\n"
             "Extract\n\tdc extract <path to .idx file>\n\n"
             "Query\n\tdc query <path to .idx file> <keyword>\n"
