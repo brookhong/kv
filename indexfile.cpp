@@ -268,9 +268,18 @@ static inline bool isVowel(char ch)
 }
 bool IndexFile::lookup2(const char *str, long &idx)
 {
-    // http://www.eslcafe.com/grammar/simple_past_tense02.html
-    // http://www.eslcafe.com/grammar/verb_forms_and_tenses06.html
-    // test cases: windows,stopped,hotter,goes,hottest,higher,highest,studies,hogging,cheating,hoping,gluing
+    // * http://www.eslcafe.com/grammar/verb_forms_and_tenses04.html
+    // windows goes plies studies
+    // * http://www.eslcafe.com/grammar/verb_forms_and_tenses05.html
+    // talking whistling hoping hiking
+    // * http://www.eslcafe.com/grammar/verb_forms_and_tenses06.html
+    // suing gluing aching hogging cheating
+    // * http://www.eslcafe.com/grammar/verb_forms_and_tenses07.html
+    // * http://www.eslcafe.com/grammar/verb_forms_and_tenses08.html
+    // * http://www.eslcafe.com/grammar/simple_past_tense02.html
+    // filled baked buried stopped
+    // * http://www.englisch-hilfen.de/en/grammar/adjektive_steig.htm
+    // higher newest hotter biggest dirtier larger easiest largest
     string word(str);
     int len = word.length();
     if(len < 4 && !isEnglish(str)) {
@@ -293,13 +302,21 @@ bool IndexFile::lookup2(const char *str, long &idx)
     if(ending3 == "ing" || ending3 == "est") {
         sWords.push_back(string(word).replace(len-3, 3, ""));
     }
-    if(len>4 && !isVowel(word[len-4])) {
+    if(ending3 == "est") {
+        // est->e
+        sWords.push_back(string(word).replace(len-2, 2, ""));
+        if(word[len-4] == 'i') {
+            // iest->y
+            sWords.push_back(string(word).replace(len-4, 4, "y"));
+        }
+    }
+    if(len>4 && (!isVowel(word[len-4]) || word[len-4] == 'u')) {
         // [d]ies->y,[d]ied->y,[p]ier->y
         if(ending3 == "ies" || ending3 == "ied" || ending3 == "ier") {
             sWords.push_back(string(word).replace(len-3, 3, "y"));
         }
         else if(ending3 == "ing") {
-            // [m]ing->e
+            // [m|u]ing->e
             sWords.push_back(string(word).replace(len-3, 3, "e"));
         }
     }
