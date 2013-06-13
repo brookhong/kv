@@ -2,15 +2,15 @@
 
 The `kv` can
 
-extract plain text from a dictionary of StarDict, for example,
+* extract plain text from a dictionary of StarDict, for example,
 
     kv extract oxford.idx
 
-build a dictionary of StarDict from a plain text file, like,
+* build a dictionary of StarDict from a plain text file, like,
 
     kv build oxford.txt
 
-query by keyword from a specified dictionary,
+* query by keyword from a specified dictionary,
 
     kv query oxford.idx key
 
@@ -27,3 +27,9 @@ The plain text file should be formated like this:
     #key4
     ;explaination of key1
     #
+
+If you have `#` in your values, you can use other key markers such as `&*#$#*`, then tell `kv` about it with option `-k`.
+
+## Build Instructions
+* LINUX/MAC : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp
+* WINDOWS   : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp
