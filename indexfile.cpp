@@ -291,7 +291,7 @@ static inline bool isVowel(char ch)
 {
     return( ch=='a' || ch=='e' || ch=='i' || ch=='o' || ch=='u' );
 }
-bool IndexFile::lookup2(const char *str, long &idx)
+bool IndexFile::lookupWithGrammar(const char *str, long &idx)
 {
     // * http://www.eslcafe.com/grammar/verb_forms_and_tenses04.html
     // windows goes plies studies
@@ -384,4 +384,41 @@ bool IndexFile::lookup2(const char *str, long &idx)
         }
     }
     return false;
+}
+bool IndexFile::lookupFuzzy(const char *str, list<FuzzyResult> &frs)
+{
+    unsigned int distance = 3;
+    FuzzyResult fr;
+    int i, j, npages = (wordcount+(ENTR_PER_PAGE-1))/ENTR_PER_PAGE;
+    for(i=0; i<npages-1; i++) {
+        load_page(i);
+        for(j=0; j<ENTR_PER_PAGE; j++) {
+            fr.distance = levenshtein(str, page.entries[j].keystr);
+            if(fr.distance<distance) {
+                fr.idx = i * ENTR_PER_PAGE + j;
+                frs.push_back(fr);
+            }
+        }
+    }
+    load_page(i);
+    for(j=i*ENTR_PER_PAGE; j<wordcount; j++) {
+        fr.distance = levenshtein(str, page.entries[j%ENTR_PER_PAGE].keystr);
+        if(fr.distance<distance) {
+            fr.idx = j;
+            frs.push_back(fr);
+        }
+    }
+    /*
+    for(int i=0; i<wordcount; i++) {
+        load_page(i/ENTR_PER_PAGE);
+        int j=i%ENTR_PER_PAGE;
+        fr.distance = levenshtein(str, page.entries[j].keystr);
+        if(fr.distance<distance) {
+            fr.idx = i;
+            frs.push_back(fr);
+        }
+    }
+    */
+    frs.sort();
+    return frs.size()>0;
 }

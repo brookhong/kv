@@ -24,8 +24,8 @@
  *
  *
  * BUILD INSTRUCTIONS
- * LINUX    : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp
- * WINDOWS  : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp
+ * LINUX    : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp levenshtein.cpp
+ * WINDOWS  : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp levenshtein.cpp
  */
 #include "mapfile.hpp"
 #include "indexfile.h"
@@ -264,11 +264,24 @@ void queryDict(const char *idxFileName, const char *keyword) {
         }
 
         IndexFile idxFile;
-        long cur;
-        if( idxFile.load(idxFileName, wc, idxFileSize) && (idxFile.lookup(keyword, cur) || idxFile.lookup2(keyword, cur)) ) {
-            string value;
-            const char * key = idxFile.get_entry(cur, value);
-            printf("%s\n", value.c_str());
+        long cur = INVALID_INDEX;
+        list<FuzzyResult> results;
+        if( idxFile.load(idxFileName, wc, idxFileSize)
+                && (idxFile.lookup(keyword, cur)
+                    || idxFile.lookupWithGrammar(keyword, cur)
+                    || idxFile.lookupFuzzy(keyword, results)) ) {
+            if(results.size() > 0) {
+                list<FuzzyResult>::iterator it;
+                for(it = results.begin(); it != results.end(); it++) {
+                    string value, key;
+                    key = idxFile.get_entry(it->idx, value);
+                    printf("\n%s(%d)\n%s\n", key.c_str(), it->distance, value.c_str());
+                }
+            } else {
+                string value, key;
+                key = idxFile.get_entry(cur, value);
+                printf("%s\n", value.c_str());
+            }
         }
     }
 }

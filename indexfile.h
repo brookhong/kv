@@ -38,7 +38,15 @@ const int INVALID_INDEX=-100;
 void switchEndianness( void * lpMem );
 int i_strcmp(const char *s1, const char *s2);
 int file_exist(const char *filename);
+unsigned int levenshtein (const char *word1, const char *word2);
 
+struct FuzzyResult {
+    unsigned int distance;
+    int idx;
+    bool operator < (const FuzzyResult& rhs) {
+        return distance < rhs.distance;
+    }
+};
 class IndexFile {
     public:
         unsigned int wordentry_offset;
@@ -51,7 +59,8 @@ class IndexFile {
         void get_data(long idx);
         const char *get_key_and_data(long idx);
         bool lookup(const char *str, long &idx);
-        bool lookup2(const char *str, long &idx);
+        bool lookupWithGrammar(const char *str, long &idx);
+        bool lookupFuzzy(const char *str, list<FuzzyResult> &frs);
 
     private:
         static const int ENTR_PER_PAGE=32;
