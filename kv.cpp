@@ -274,7 +274,9 @@ void queryDict(const char *idxFileName, const char *keyword) {
         if( idxFile.load(idxFileName, wc, idxFileSize)
                 && (idxFile.lookup(keyword, cur)
                     || idxFile.lookupWithGrammar(keyword, cur)
-                    || idxFile.lookupFuzzy(keyword, results)) ) {
+                    || idxFile.lookupFuzzy(keyword, results)
+                    || idxFile.lookupPartial(keyword, results)
+                    ) ) {
             if(results.size() > 0) {
                 list<FuzzyResult>::iterator it;
                 for(it = results.begin(); it != results.end(); it++) {

@@ -61,6 +61,7 @@ class IndexFile {
         bool lookup(const char *str, long &idx);
         bool lookupWithGrammar(const char *str, long &idx);
         bool lookupFuzzy(const char *str, list<FuzzyResult> &frs);
+        bool lookupPartial(const char *str, list<FuzzyResult> &frs);
 
     private:
         static const int ENTR_PER_PAGE=32;

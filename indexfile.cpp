@@ -387,6 +387,9 @@ bool IndexFile::lookupWithGrammar(const char *str, long &idx)
 }
 bool IndexFile::lookupFuzzy(const char *str, list<FuzzyResult> &frs)
 {
+    if(strlen(str) < 5) {
+        return false;
+    }
     unsigned int distance = 3;
     FuzzyResult fr;
     int i, j, npages = (wordcount+(ENTR_PER_PAGE-1))/ENTR_PER_PAGE;
@@ -408,17 +411,34 @@ bool IndexFile::lookupFuzzy(const char *str, list<FuzzyResult> &frs)
             frs.push_back(fr);
         }
     }
-    /*
-    for(int i=0; i<wordcount; i++) {
-        load_page(i/ENTR_PER_PAGE);
-        int j=i%ENTR_PER_PAGE;
-        fr.distance = levenshtein(str, page.entries[j].keystr);
-        if(fr.distance<distance) {
-            fr.idx = i;
+    frs.sort();
+    return frs.size()>0;
+}
+bool IndexFile::lookupPartial(const char *str, list<FuzzyResult> &frs)
+{
+    if(strlen(str) < 5) {
+        return false;
+    }
+    FuzzyResult fr;
+    int i, j, npages = (wordcount+(ENTR_PER_PAGE-1))/ENTR_PER_PAGE;
+    for(i=0; i<npages-1; i++) {
+        load_page(i);
+        for(j=0; j<ENTR_PER_PAGE; j++) {
+            if(strstr(page.entries[j].keystr, str) != NULL) {
+                fr.distance = strlen(page.entries[j].keystr);
+                fr.idx = i * ENTR_PER_PAGE + j;
+                frs.push_back(fr);
+            }
+        }
+    }
+    load_page(i);
+    for(j=i*ENTR_PER_PAGE; j<wordcount; j++) {
+        if(strstr(page.entries[j%ENTR_PER_PAGE].keystr, str) != NULL) {
+            fr.distance = strlen(page.entries[j%ENTR_PER_PAGE].keystr);
+            fr.idx = j;
             frs.push_back(fr);
         }
     }
-    */
     frs.sort();
     return frs.size()>0;
 }
