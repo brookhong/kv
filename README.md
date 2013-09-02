@@ -23,13 +23,15 @@ The plain text file should be formated like this:
     ;explaination of key2
     more explaination of key2
     #key3
-    ;explaination of key1
+    ;explaination of key3
     #key4
-    ;explaination of key1
+    #key5
+    ;explaination of key4 and key5
+    more and more
     #
 
 If you have `#` in your values, you can use other key markers such as `&*#$#*`, then tell `kv` about it with option `-k`.
 
 ## Build Instructions
-* LINUX/MAC : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp
-* WINDOWS   : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp
+* LINUX/MAC : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp levenshtein.cpp
+* WINDOWS   : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp levenshtein.cpp

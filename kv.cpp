@@ -84,6 +84,11 @@ void buildDict(const char *txtFile, string& bookName) {
                 if(*(p+1) == '\r') {
                     keyLen -= 1;
                 }
+                string key(keyStart, keyLen);
+                if(key.find("\r") != string::npos) {
+                    printf("Invalid input file.\n");
+                    return;
+                }
             }
         } else if(*p == ';') {
             if(keyLen && !valueStart) {
@@ -287,9 +292,9 @@ void queryDict(const char *idxFileName, const char *keyword) {
 }
 int showUsage() {
     printf( "Usage: kv -- a simple dict tool to build dict, extract dict and query\n\n"
-            "Build\n\tdc build [-t <title>] [-k <key marker>] <path to plain txt file>\n\n"
-            "Extract\n\tdc extract <path to .idx file>\n\n"
-            "Query\n\tdc query <path to .idx file> <keyword>\n"
+            "Build\n\tkv build [-t <title>] [-k <key marker>] <path to plain txt file>\n\n"
+            "Extract\n\tkv extract <path to .idx file>\n\n"
+            "Query\n\tkv query <path to .idx file> <keyword>\n"
           );
     return 1;
 }
