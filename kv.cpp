@@ -252,51 +252,72 @@ void extractDict(const char *idxFileName) {
 }
 void queryDict(const char *idxFileName, const char *keyword) {
     string fileName = idxFileName;
-    fileName.replace(fileName.length()-4,4,".ifo");
-    if(!file_exist(fileName.c_str())) {
-        printf("%s not exists\n", fileName.c_str());
+    if(!file_exist(idxFileName) || strlen(idxFileName) < 4) {
+        printf("%s is not a valid idx file.\n", idxFileName);
     } else {
-        ifstream fIfo(fileName.c_str());
-        char line[256];
-        unsigned int wc = 0, idxFileSize = 0;
-        while((wc == 0 || idxFileSize == 0) && !fIfo.eof()){
-            fIfo.getline(line, 256);
-            if(strncmp(line, "wordcount=", 10) == 0) {
-                sscanf(line, "wordcount=%u\n", &wc);
-            } else if(strncmp(line, "idxfilesize=", 12) == 0) {
-                sscanf(line, "idxfilesize=%u\n", &idxFileSize);
-            }
-        }
-
-        IndexFile idxFile;
-        long cur = INVALID_INDEX;
-        list<FuzzyResult> results;
-        if( idxFile.load(idxFileName, wc, idxFileSize)
-                && (idxFile.lookup(keyword, cur)
-                    || idxFile.lookupWithGrammar(keyword, cur)
-                    || idxFile.lookupFuzzy(keyword, results)
-                    || idxFile.lookupPartial(keyword, results)
-                    ) ) {
-            if(results.size() > 0) {
-                list<FuzzyResult>::iterator it;
-                for(it = results.begin(); it != results.end(); it++) {
-                    string value, key;
-                    key = idxFile.get_entry(it->idx, value);
-                    printf("\n%s(%d)\n%s\n", key.c_str(), it->distance, value.c_str());
+        fileName.replace(fileName.length()-4,4,".ifo");
+        if(!file_exist(fileName.c_str())) {
+            printf("%s not exists\n", fileName.c_str());
+        } else {
+            ifstream fIfo(fileName.c_str());
+            char line[256];
+            unsigned int wc = 0, idxFileSize = 0;
+            while((wc == 0 || idxFileSize == 0) && !fIfo.eof()){
+                fIfo.getline(line, 256);
+                if(strncmp(line, "wordcount=", 10) == 0) {
+                    sscanf(line, "wordcount=%u\n", &wc);
+                } else if(strncmp(line, "idxfilesize=", 12) == 0) {
+                    sscanf(line, "idxfilesize=%u\n", &idxFileSize);
                 }
-            } else {
-                string value, key;
-                key = idxFile.get_entry(cur, value);
-                printf("%s\n", value.c_str());
+            }
+
+            IndexFile idxFile;
+            long cur = INVALID_INDEX;
+            list<FuzzyResult> results;
+            if( idxFile.load(idxFileName, wc, idxFileSize)
+                    && (idxFile.lookup(keyword, cur)
+                        || idxFile.lookupWithGrammar(keyword, cur)
+                        || idxFile.lookupFuzzy(keyword, results)
+                        || idxFile.lookupPartial(keyword, results)
+                       ) ) {
+                if(results.size() > 0) {
+                    list<FuzzyResult>::iterator it;
+                    for(it = results.begin(); it != results.end(); it++) {
+                        string value, key;
+                        key = idxFile.get_entry(it->idx, value);
+                        printf("\n%s(%d)\n%s\n", key.c_str(), it->distance, value.c_str());
+                    }
+                } else {
+                    string value, key;
+                    key = idxFile.get_entry(cur, value);
+                    printf("%s\n", value.c_str());
+                }
             }
         }
     }
 }
 int showUsage() {
-    printf( "Usage: kv -- a simple dict tool to build dict, extract dict and query\n\n"
-            "Build\n\tkv build [-t <title>] [-k <key marker>] <path to plain txt file>\n\n"
-            "Extract\n\tkv extract <path to .idx file>\n\n"
-            "Query\n\tkv query <path to .idx file> <keyword>\n"
+    printf( "kv -- a simple dict tool to build dict, extract dict and query\n\n"
+            "Build\n\tkv build [-t <title>] [-k <key marker>] <plain txt file>\n\n"
+"\tThe plain text file should be formated as below:\n"
+"--------------------------------------------------------------------------------\n"
+"#key1\n"
+";explainations must be started with semicolon, explanation of key1\n"
+"#key2\n"
+";explanation of key2\n"
+"more explanation of key2\n"
+"#key3\n"
+";explanation of key3\n"
+"#key4\n"
+"#key5\n"
+";explanation of key4 and key5\n"
+"more and more\n"
+"#\n"
+"--------------------------------------------------------------------------------\n"
+"\tIf you have `#` in your values, you can use other key markers such as `&*#$#*`, then tell `kv` about it with option `-k`.\n"
+            "Extract\n\tkv extract <.idx file>\n\n"
+            "Query\n\tkv query <.idx file> <keyword>\n\n"
+"Example\n\tkv build -k '#>#' test.txt\n\tkv query ./test.idx key\n\n"
           );
     return 1;
 }
@@ -311,10 +332,18 @@ int main(int argc,char** argv)
             if(argv[i][0] == '-') {
                 switch (argv[i][1]) {
                     case 't':
-                        sBookName = argv[++i];
+                        if(++i < argc) {
+                            sBookName = argv[i];
+                        } else {
+                            return showUsage();
+                        }
                         break;
                     case 'k':
-                        gKeyMarker = argv[++i];
+                        if(++i < argc) {
+                            gKeyMarker = argv[i];
+                        } else {
+                            return showUsage();
+                        }
                         break;
                     default:
                         break;

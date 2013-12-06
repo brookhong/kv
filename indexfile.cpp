@@ -416,7 +416,7 @@ bool IndexFile::lookupFuzzy(const char *str, list<FuzzyResult> &frs)
 }
 bool IndexFile::lookupPartial(const char *str, list<FuzzyResult> &frs)
 {
-    if(strlen(str) < 5) {
+    if(strlen(str) < 3) {
         return false;
     }
     FuzzyResult fr;
