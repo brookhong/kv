@@ -18,19 +18,19 @@ The `kv` can
 The plain text file should be formated like this:
 
     #key1
-    ;explaination of key1
+    ;explanation of key1
     #key2
-    ;explaination of key2
-    more explaination of key2
+    ;explanation of key2
+    more explanation of key2
     #key3
-    ;explaination of key3
+    ;explanation of key3
     #key4
     #key5
-    ;explaination of key4 and key5
+    ;explanation of key4 and key5
     more and more
-    #
 
-If you have `#` in your values, you can use other key markers such as `&*#$#*`, then tell `kv` about it with option `-k`.
+If you have `#` in your values, you can use another key marker such as `_KEY_STARTER_`, then tell `kv` about it with option `-k`.
+Explanations must be started with semicolon(;).
 
 ## Build Instructions
 * LINUX/MAC : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp levenshtein.cpp

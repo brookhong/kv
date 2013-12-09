@@ -77,7 +77,7 @@ void buildDict(const char *txtFile, string& bookName) {
     map<char*, int> synonyms;
     map<char*, int>::iterator itci;
     map<string, Index> digestMap;
-    for(;*p;p++) {
+    for(;;p++) {
         if(*p == '\n') {
             if(keyStart && !valueStart) {
                 keyLen = p-keyStart;
@@ -94,7 +94,7 @@ void buildDict(const char *txtFile, string& bookName) {
             if(keyLen && !valueStart) {
                 valueStart = p+1;
             }
-        } else if(strncmp(p, gKeyMarker.c_str(), lenKeyMarker) == 0) {
+        } else if(*p == '\0' || strncmp(p, gKeyMarker.c_str(), lenKeyMarker) == 0) {
             if(keyLen && *(p-1) == '\n') {
                 if(valueStart) {
                     int expLen = p-valueStart-1;
@@ -126,6 +126,9 @@ void buildDict(const char *txtFile, string& bookName) {
                 }
                 keyStart = p+lenKeyMarker;
                 p += lenKeyMarker-1;
+            }
+            if(*p == '\0') {
+                break;
             }
         }
     }
@@ -297,7 +300,7 @@ void queryDict(const char *idxFileName, const char *keyword) {
     }
 }
 int showUsage() {
-    printf( "kv -- a simple dict tool to build dict, extract dict and query\n\n"
+    printf( "kv -- a simple dict tool to build dict(StarDict), extract dict and query\n\n"
             "Build\n\tkv build [-t <title>] [-k <key marker>] <plain txt file>\n\n"
 "\tThe plain text file should be formated as below:\n"
 "--------------------------------------------------------------------------------\n"
@@ -312,12 +315,12 @@ int showUsage() {
 "#key5\n"
 ";explanation of key4 and key5\n"
 "more and more\n"
-"#\n"
 "--------------------------------------------------------------------------------\n"
-"\tIf you have `#` in your values, you can use other key markers such as `&*#$#*`, then tell `kv` about it with option `-k`.\n"
+"\tIf you have `#` in your values, you can use another key marker such as `_KEY_STARTER_`, then tell `kv` about it with option `-k`.\n"
+"\tExplanations must be started with semicolon(;).\n"
             "Extract\n\tkv extract <.idx file>\n\n"
             "Query\n\tkv query <.idx file> <keyword>\n\n"
-"Example\n\tkv build -k '#>#' test.txt\n\tkv query ./test.idx key\n\n"
+"Example\n\tkv build -k '_KEY_STARTER_' test.txt\n\tkv query ./test.idx key\n\n"
           );
     return 1;
 }
