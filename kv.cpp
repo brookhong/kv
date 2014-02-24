@@ -24,15 +24,19 @@
  *
  *
  * BUILD INSTRUCTIONS
- * LINUX    : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp levenshtein.cpp
- * WINDOWS  : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp levenshtein.cpp
+ * LINUX    : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp levenshtein.cpp mongoose.c
+ * WINDOWS  : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp levenshtein.cpp mongoose.c
  */
 #include "mapfile.hpp"
 #include "indexfile.h"
 #include "md5.h"
 #include <map>
+#include <stdarg.h>
+
+#include "mongoose.h"
 
 string gKeyMarker = "#";
+string gPort = "8080";
 struct Index {
     int m_nKeyLen;
     int m_nOffset;
@@ -253,14 +257,35 @@ void extractDict(const char *idxFileName) {
             maxWordLen,maxExpLen,maxLenString.c_str());
     fOut.close();
 }
-void queryDict(const char *idxFileName, const char *keyword) {
+std::string string_format(const std::string fmt, ...) {
+    int size = 100;
+    std::string str;
+    va_list ap;
+    while (1) {
+        str.resize(size);
+        va_start(ap, fmt);
+        int n = vsnprintf((char *)str.c_str(), size, fmt.c_str(), ap);
+        va_end(ap);
+        if (n > -1 && n < size) {
+            str.resize(n);
+            return str;
+        }
+        if (n > -1)
+            size = n + 1;
+        else
+            size *= 2;
+    }
+    return str;
+}
+string queryDict(const char *idxFileName, const char *keyword) {
+    string result;
     string fileName = idxFileName;
     if(!file_exist(idxFileName) || strlen(idxFileName) < 4) {
-        printf("%s is not a valid idx file.\n", idxFileName);
+        result = string(idxFileName) + " is not a valid idx file.\n";
     } else {
         fileName.replace(fileName.length()-4,4,".ifo");
         if(!file_exist(fileName.c_str())) {
-            printf("%s not exists\n", fileName.c_str());
+            result = fileName + " not exists\n";
         } else {
             ifstream fIfo(fileName.c_str());
             char line[256];
@@ -288,16 +313,17 @@ void queryDict(const char *idxFileName, const char *keyword) {
                     for(it = results.begin(); it != results.end(); it++) {
                         string value, key;
                         key = idxFile.get_entry(it->idx, value);
-                        printf("\n%s(%d)\n%s\n", key.c_str(), it->distance, value.c_str());
+                        result += string_format("\n%s(%d)\n%s\n", key.c_str(), it->distance, value.c_str());
                     }
                 } else {
                     string value, key;
                     key = idxFile.get_entry(cur, value);
-                    printf("%s\n", value.c_str());
+                    result = value;
                 }
             }
         }
     }
+    return result;
 }
 int showUsage() {
     printf( "kv -- a simple dict tool to build dict(StarDict), extract dict and query\n\n"
@@ -324,6 +350,45 @@ int showUsage() {
           );
     return 1;
 }
+static const char *html_form =
+"<html><body>"
+"<form method=\"POST\" action=\"/query\">"
+"Word: <input type=\"text\" name=\"word\" />"
+"<input type=\"submit\" value='query'/>"
+"</form></body></html>";
+
+static int handler(struct mg_connection *conn) {
+    char var1[500];
+
+    if (strcmp(conn->uri, "/query") == 0) {
+        // User has submitted a form, show submitted data and a variable value
+        // Parse form data. var1 and var2 are guaranteed to be NUL-terminated
+        mg_get_var(conn, "word", var1, sizeof(var1));
+
+        // Send reply to the client, showing submitted form values.
+        // POST data is in conn->content, data length is in conn->content_len
+        mg_send_header(conn, "Content-Type", "text/plain");
+        string ret = queryDict((const char *)conn->server_param, var1);
+        mg_printf_data(conn, "%s\n", ret.c_str());
+    } else {
+        // Show HTML form.
+        mg_send_data(conn, html_form, strlen(html_form));
+    }
+
+    return 1;
+}
+int httpServer(const char *idxFileName, const char *port) {
+    static string sIdxFile = idxFileName;
+    struct mg_server *server = mg_create_server((void*)sIdxFile.c_str());
+    mg_set_option(server, "listening_port", port);
+    mg_add_uri_handler(server, "/", handler);
+    printf("Starting on port %s\n", mg_get_option(server, "listening_port"));
+    for (;;) {
+        mg_poll_server(server, 1000);
+    }
+    mg_destroy_server(&server);
+    return 0;
+}
 int main(int argc,char** argv)
 {
     if(argc < 2) {
@@ -348,6 +413,12 @@ int main(int argc,char** argv)
                             return showUsage();
                         }
                         break;
+                    case 's':
+                        if(++i < argc) {
+                            gPort = argv[i];
+                        } else {
+                            return showUsage();
+                        }
                     default:
                         break;
                 }
@@ -366,10 +437,13 @@ int main(int argc,char** argv)
             extractDict(argv[i]);
         } else if(0 == strcmp(argv[1],"query")) {
             if(i+1 < argc) {
-                queryDict(argv[i], argv[i+1]);
+                string ret = queryDict(argv[i], argv[i+1]);
+                printf("%s\n", ret.c_str());
             } else {
                 return showUsage();
             }
+        } else if(0 == strcmp(argv[1],"server")) {
+            return httpServer(argv[i], gPort.c_str());
         } else {
             return showUsage();
         }
