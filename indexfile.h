@@ -25,6 +25,8 @@
  */
 #ifndef _INDEXFILE_HPP_
 #define _INDEXFILE_HPP_
+#include <string.h>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 #include <list>
