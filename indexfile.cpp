@@ -307,7 +307,7 @@ bool IndexFile::lookupWithGrammar(const char *str, long &idx)
     // higher newest hotter biggest dirtier larger easiest largest
     string word(str);
     int len = word.length();
-    if(len < 4 && !isEnglish(str)) {
+    if(len < 4 || !isEnglish(str)) {
         return false;
     }
     string ending3 = word.substr(len-3,3);

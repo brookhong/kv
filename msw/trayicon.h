@@ -9,21 +9,13 @@
 #define THIS_CLASSNAME      _T("KV")
 #define THIS_TITLE          _T("KV")
 
+#define IDI_TRAY       100
+#define WM_TRAYMSG     101
+#define MENU_CONFIG    32
+#define MENU_EXIT      33
 
-enum {
-    ID_TRAYICON         = 1,
-
-    APPWM_TRAYICON      = WM_APP,
-    APPWM_NOP           = WM_APP + 1,
-
-    //  Our commands
-    ID_EXIT             = 2000,
-    ID_ABOUT,
-};
 
 extern void (*app_close_listener)( HWND );
-extern LRESULT (*WindowProc_fallback)( HWND, UINT, WPARAM, LPARAM );
-
 void    RegisterApplicationClass( HINSTANCE hInstance );
 
 #endif
