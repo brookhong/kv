@@ -14,6 +14,11 @@ The `kv` can
 
     kv query oxford.idx key
 
+* httpd service under Windows
+
+    kv.exe server oxford.idx
+
+    Then you can access http://localhost:8080/ to query word, the feature can work with [a chrome extension](https://github.com/brookhong/kv.crx) to query word on web page.
 
 The plain text file should be formated like this:
 
