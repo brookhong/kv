@@ -18,7 +18,7 @@ else
 	CFLAGS = -DHAVE_MMAP -o $@
 	#OBJ_FILES := $(CPP_FILES:.cpp=.o) $(C_FILES:.c=.o)
 	OBJSUF = .o
-	LINK_FLAGS = -o $(OBJDIR)/kv
+	LINK_FLAGS = -pthread -o $(OBJDIR)/kv
 endif
 
 OBJ_FILES := $(addprefix $(OBJDIR)/,$(CPP_FILES:.cpp=$(OBJSUF))) $(addprefix $(OBJDIR)/,$(C_FILES:.c=$(OBJSUF)))

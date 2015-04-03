@@ -349,9 +349,7 @@ int showUsage() {
     return 1;
 }
 
-#ifdef _WIN32
 int httpServer(const char *idxFileName, const char *port);
-#endif
 int main(int argc,char** argv)
 {
     if(argc < 2) {
@@ -406,12 +404,7 @@ int main(int argc,char** argv)
                 return showUsage();
             }
         } else if(0 == strcmp(argv[1],"server")) {
-#ifdef _WIN32
-            httpServer(argv[i], gPort.c_str());
-#else
-            printf("Only supports in WINDOWS.\n");
-#endif
-            return 0;
+            return httpServer(argv[i], gPort.c_str());
         } else {
             return showUsage();
         }

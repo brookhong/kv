@@ -14,7 +14,7 @@ The `kv` can
 
     kv query oxford.idx key
 
-* httpd service under Windows
+* httpd service
 
     kv.exe server oxford.idx
 
@@ -38,5 +38,5 @@ If you have `#` in your values, you can use another key marker such as `_KEY_STA
 Explanations must be started with semicolon(;).
 
 ## Build Instructions
-* LINUX/MAC : g++ -DHAVE_MMAP kv.cpp md5.cpp indexfile.cpp levenshtein.cpp
-* WINDOWS   : cl -D_WIN32 kv.cpp md5.cpp indexfile.cpp levenshtein.cpp
+    cd kv
+    make

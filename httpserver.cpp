@@ -1,9 +1,7 @@
-#include <process.h>
 #include <string>
+#include <string.h>
 using namespace std;
 #include "mongoose.h"
-#include "trayicon.h"
-int _inMain( HINSTANCE hInst );
 string queryDict(const char *idxFileName, const char *keyword);
 
 static const char *html_form =
@@ -38,13 +36,8 @@ typedef struct _HTTPD{
     const char * port;
 }HTTPD;
 
-static int stopped = 0;
+int stopped = 0;
 
-void (*app_close_listener)( HWND );
-void on_close_listener( HWND hWnd )
-{
-    stopped = 1;
-}
 void _httpServer(void *pv) {
     HTTPD *p = (HTTPD*)pv;
     static string sIdxFile = p->idxFileName;
@@ -58,43 +51,12 @@ void _httpServer(void *pv) {
     mg_destroy_server(&server);
 }
 
-void bg(LPSTR cmdline)
-{
-   PROCESS_INFORMATION procinfo;
-   STARTUPINFOA startinfo;
-   BOOL rc;
-
-   /* Init the STARTUPINFOA struct. */
-   memset(&startinfo, 0, sizeof(startinfo));
-   startinfo.cb = sizeof(startinfo);
-
-   rc = CreateProcess(NULL,
-                      cmdline,        // command line
-                      NULL,             // process security attributes
-                      NULL,             // primary thread security attributes
-                      TRUE,             // handles are inherited
-                      DETACHED_PROCESS, // creation flags
-                      NULL,             // use parent's environment
-                      NULL,             // use parent's current directory
-                      &startinfo,       // STARTUPINFO pointer
-                      &procinfo);       // receives PROCESS_INFORMATION
-   // Cleanup handles
-   CloseHandle(procinfo.hProcess);
-   CloseHandle(procinfo.hThread);
-
-   ExitProcess(0);
-}
-
+#ifndef _WIN32
 int httpServer(const char *idxFileName, const char *port) {
-    if(GetConsoleWindow() == NULL) {
-        HTTPD httpd;
-        app_close_listener = on_close_listener;
-        httpd.idxFileName = idxFileName;
-        httpd.port = port;
-        _beginthread( _httpServer, 0, (void*)&httpd );
-        _inMain(NULL);
-    } else {
-        bg(GetCommandLine());
-    }
+    HTTPD httpd;
+    httpd.idxFileName = idxFileName;
+    httpd.port = port;
+    _httpServer(&httpd);
     return 0;
 }
+#endif
