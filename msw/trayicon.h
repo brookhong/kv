@@ -15,7 +15,7 @@
 #define MENU_EXIT      33
 
 
-extern void (*app_close_listener)( HWND );
+void app_close_listener( HWND );
 void    RegisterApplicationClass( HINSTANCE hInstance );
 
 #endif

@@ -2,6 +2,7 @@
 #include <string.h>
 using namespace std;
 #include "mongoose.h"
+#include "httpserver.h"
 string queryDict(const char *idxFileName, const char *keyword);
 
 static const char *html_form =
@@ -31,10 +32,6 @@ static int handler(struct mg_connection *conn) {
 
     return 1;
 }
-typedef struct _HTTPD{
-    const char * idxFileName;
-    const char * port;
-}HTTPD;
 
 int stopped = 0;
 
