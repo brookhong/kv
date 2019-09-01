@@ -45,7 +45,7 @@ unsigned int levenshtein (const char *word1, const char *word2);
 struct FuzzyResult {
     unsigned int distance;
     int idx;
-    bool operator < (const FuzzyResult& rhs) {
+    bool operator < (const FuzzyResult& rhs) const {
         return distance < rhs.distance;
     }
 };
