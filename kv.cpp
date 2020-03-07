@@ -326,26 +326,29 @@ string queryDict(const char *idxFileName, const char *keyword) {
 int showUsage() {
     printf( "kv -- a simple dict tool to build dict(StarDict), extract dict and query\n\n"
             "Build\n\tkv build [-t <title>] [-k <key marker>] <plain txt file>\n\n"
-"\tThe plain text file should be formated as below:\n"
-"--------------------------------------------------------------------------------\n"
-"#key1\n"
-";explainations must be started with semicolon, explanation of key1\n"
-"#key2\n"
-";explanation of key2\n"
-"more explanation of key2\n"
-"#key3\n"
-";explanation of key3\n"
-"#key4\n"
-"#key5\n"
-";explanation of key4 and key5\n"
-"more and more\n"
-"--------------------------------------------------------------------------------\n"
-"\tIf you have `#` in your values, you can use another key marker such as `_KEY_STARTER_`, then tell `kv` about it with option `-k`.\n"
-"\tExplanations must be started with semicolon(;).\n"
+            "\tThe plain text file should be formated as below:\n"
+            "--------------------------------------------------------------------------------\n"
+            "#key1\n"
+            ";explainations must be started with semicolon, explanation of key1\n"
+            "#key2\n"
+            ";explanation of key2\n"
+            "more explanation of key2\n"
+            "#key3\n"
+            ";explanation of key3\n"
+            "#key4\n"
+            "#key5\n"
+            ";explanation of key4 and key5\n"
+            "more and more\n"
+            "--------------------------------------------------------------------------------\n"
+            "\tIf you have `#` in your values, you can use another key marker such as `_KEY_STARTER_`, then tell `kv` about it with option `-k`.\n"
+            "\tExplanations must be started with semicolon(;).\n"
             "Extract\n\tkv extract <.idx file>\n\n"
             "Query\n\tkv query <.idx file> <keyword>\n\n"
-"Example\n\tkv build -k '_KEY_STARTER_' test.txt\n\tkv query ./test.idx key\n\n"
-          );
+            "Server\n\tkv server [-p <port>] <.idx file>\n\n"
+            "Example\n\tkv build -k '_KEY_STARTER_' test.txt\n"
+            "\tkv query ./test.idx key\n"
+            "\tkv server -p 127.0.0.1:9078 ./test.idx\n\n"
+            );
     return 1;
 }
 
@@ -374,7 +377,7 @@ int main(int argc,char** argv)
                             return showUsage();
                         }
                         break;
-                    case 's':
+                    case 'p':
                         if(++i < argc) {
                             gPort = argv[i];
                         } else {

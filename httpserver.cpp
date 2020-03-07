@@ -22,7 +22,7 @@ static int handler(struct mg_connection *conn) {
 
         // Send reply to the client, showing submitted form values.
         // POST data is in conn->content, data length is in conn->content_len
-        mg_send_header(conn, "Content-Type", "text/plain");
+        mg_send_header(conn, "Content-Type", "text/plain; charset=UTF-8");
         string ret = queryDict((const char *)conn->server_param, var1);
         mg_printf_data(conn, "%s\n", ret.c_str());
     } else {
